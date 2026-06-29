@@ -18,6 +18,7 @@ public class LevelShifterManager : MonoBehaviour
 
     private Rigidbody2D playerRb;
     private PlayerController playerController;
+    private bool isSwapping = false;
 
     void Start()
     {
@@ -138,6 +139,8 @@ public class LevelShifterManager : MonoBehaviour
 
     private void HandleSelection()
     {
+        if (isSwapping) return;
+
         MapBlock mapUnderCursor = mapGrid[cursorCoord.x, cursorCoord.y];
 
         if (Input.GetKeyDown(KeyCode.Z))
@@ -180,10 +183,38 @@ public class LevelShifterManager : MonoBehaviour
         mapGrid[mapA.gridCoordinate.x, mapA.gridCoordinate.y] = mapA;
         mapGrid[mapB.gridCoordinate.x, mapB.gridCoordinate.y] = mapB;
 
-        Vector3 tempPos = mapA.transform.position;
-        mapA.transform.position = mapB.transform.position;
-        mapB.transform.position = tempPos;
+        StartCoroutine(AnimateSwap(mapA, mapB));
+    }
+
+    private System.Collections.IEnumerator AnimateSwap(MapBlock mapA, MapBlock mapB)
+    {
+        isSwapping = true;
+
+        Vector3 startPosA = mapA.transform.position;
+        Vector3 startPosB = mapB.transform.position;
+
+        float duration = 0.4f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+
+            float percent = elapsed / duration;
+
+            float smoothPercent = Mathf.SmoothStep(0, 1, percent);
+
+            mapA.transform.position = Vector3.Lerp(startPosA, startPosB, smoothPercent);
+            mapB.transform.position = Vector3.Lerp(startPosB, startPosA, smoothPercent);
+
+            yield return null;
+        }
+
+        mapA.transform.position = startPosB;
+        mapB.transform.position = startPosA;
 
         RefreshHovers();
+
+        isSwapping = false;
     }
 }

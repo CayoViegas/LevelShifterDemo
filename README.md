@@ -23,7 +23,7 @@
 - **GameManager (O Gerente)**
     - **Função:** O cérebro que gerencia a matriz lógica e paralisa o jogo.
     - **Componentes:**
-        - `LevelShifterManager (Script)`: Ouve a tecla *C*, pausa o input do jogador, gerencia o array bidimensional `MapBlock[,]`, e move fisicamente as instâncias.
+        - `LevelShifterManager (Script)`: Ouve a tecla *C*, pausa o input do jogador, gerencia o array bidimensional `MapBlock[,]`, aplica travas de estado (`isSwapping`) e move fisicamente as instâncias via Coroutine.
 - **Global Camera**
     - **Função:** A câmera que enxerga o tabuleiro todo.
     - **Componentes:**
@@ -37,3 +37,11 @@
 5. O jogador navega na matriz virtual usando setas e seleciona com a tecla "X".
 6. Ao permutar, as posições dos `MapBlocks` são invertidas. O jogador (como é filho) viaja automaticamente sem interagir com a física.
 7. Ao fechar o modo, o jogador perde o "Pai" e a física *Dynamic* é reativada, assumindo seu lugar no novo layout de mundo.
+
+## 3. Detalhes Técnicos: Animação e Interpolação
+Para evitar teletransportes abruptos e melhorar o *game feel*, a troca física dos mapas é gerenciada assincronamente por uma **Coroutine** (`AnimateSwap`).
+
+- **Trava de Estado (State Lock):** A variável booleana `isSwapping` bloqueia novos inputs de seleção do jogador enquanto uma animação está em curso, garantindo a integridade da matriz.
+- **Movimento (Lerp):** O deslocamento dos mapas no espaço 3D é calculado frame a frame usando `Vector3.Lerp` durante um intervalo de tempo fixo (ex: 0.4s).
+- **Curva de Suavização:** A porcentagem de tempo decorrido passa por uma função `Mathf.SmoothStep`, gerando um movimento não-linear (acelera no início e freia suavemente no fim).
+- **Correção de Flutuação (Snap Final):** Ao fim da Coroutine, as coordenadas espaciais dos mapas são cravadas exatamente nos valores matemáticos previstos para evitar desalinhamentos por erros de ponto flutuante (*floating-point errors*) a longo prazo.
